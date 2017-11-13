@@ -23,12 +23,17 @@ import getpass
 from netmiko import ConnectHandler
 # Import telnetlib for telnet connections
 import telnetlib
-# Import strftime for file naming purposes
+# Import strftime for file naming purposes and run-time
 from time import strftime
-# Import os to check if devices are online to check
+# Used for run time calculations
+from datetime import datetime
+# Used to check if devices are online to check
 import os
-# Import IPNetwork to convert CIDR to hosts
+# Used to convert CIDR to hosts
 from netaddr import IPNetwork
+# Used to scan ports
+import socket
+import subprocess
 
 # colorama initialization, required for windows
 init(autoreset=True)
@@ -46,22 +51,41 @@ password = getpass.getpass("Password: ")
 enablepw = password
 
 
+# Setting a start time for script
+t1 = datetime.now()
+
+
 # Create device list to populate from devices.txt
 device_list = []
 
 def online_device_add():
-    # Function to check if device is online
-    # Comment out non-applicable OS
+    # Function to check if device has open ports before adding to device list
 
-    #Linux
-    #response = os.system("ping -c 1 -w 2 " + str(device) + " > /dev/null 2>&1")
+    # Variable initialization
+    available = False
 
-    #Windows
-    response = os.system("ping -c 1 " + str(device) + " /f >nul 2>&1")
+    # Set ports to scan (SSH and Telnet)
+    ports = [22,23]
+
+    # Scan for open ports an mark as available if they are
+    try:
+        for port in ports:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(2)
+            result = sock.connect_ex((device, port))
+            if result == 0:
+                available = True
+            sock.close()
+    except socket.error:
+        sys.exit()
+    except KeyboardInterrupt:
+        print ("\n\nYou pressed Ctrl+C for " + device)
+        sys.exit()
 
     # Add device to device list if reachable
-    if response == 0:
+    if available:
         device_list.append(str(device))
+
 
 # open the devices text file in read-only mode
 print(Fore.MAGENTA + "\n\nImporting devices and checking availability..." + Fore.WHITE)
@@ -81,7 +105,7 @@ with open('devices.txt', 'r') as fn:
                 # Convert CIDR to individual hosts
                 for ip in IPNetwork(line):
                     # Converted host from CIDR is device
-                    device = ip
+                    device = str(ip)
                     # Function to check reachability
                     online_device_add()
             else:
@@ -164,4 +188,13 @@ for device in device_list:
 
 
 # close log
-file.close() 
+file.close()
+
+# Setting a finish time for script
+t2 = datetime.now()
+
+# Calculates the difference of time, to see how long it took to run the script
+total =  t2 - t1
+
+# Printing the information to screen
+print ('\n\nScanning Completed in: ' + str(total))
