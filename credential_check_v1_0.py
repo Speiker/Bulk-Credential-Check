@@ -5,6 +5,7 @@
 # Input: devices.txt file with one device hostname or IP address per    #
 #        line. This can include CIDR networks                           #
 # Output: Info is output to screen and logged (username_checked.csv).   #
+#         Offers to export available devices found to file.             #
 #                                                                       #
 # Assumptions: Telnet connections should be formatted as follows        #
 #                 Username:                                             #
@@ -48,6 +49,19 @@ password = getpass.getpass("Password: ")
 enablepw = password
 
 
+# Offer to save available devices found to file
+user_message = Fore.CYAN + "\nWould you like to export available devices found to file? (y/n) " + Fore.WHITE
+device_export = input(user_message)
+if device_export.lower() == 'y':
+    user_message = Fore.CYAN + "    Please enter name for the file: " + Fore.WHITE
+    device_file = input(user_message)
+
+    if device_file.endswith('.txt'):
+        device_file = device_file.strip()
+    else:
+        device_file = device_file.strip() + '.txt'
+
+
 # Create device list to populate from devices.txt
 device_list = []
 
@@ -63,6 +77,7 @@ def online_device_add():
     # Add device to device list if reachable
     if response == 0:
         device_list.append(str(device))
+
 
 # open the devices text file in read-only mode
 print(Fore.MAGENTA + "\n\nImporting devices and checking availability..." + Fore.WHITE)
@@ -90,6 +105,14 @@ with open('devices.txt', 'r') as fn:
                 device = line
                 # Function to check reachability
                 online_device_add()
+
+
+# Write available devices to file if requested earlier
+if device_export.lower() == 'y':
+    device_log = open(device_file, 'w')
+    for device in device_list:
+        device_log.write(device + "\n")
+    device_log.close()
 
 
 # Set log file name to match username tested and initialize log
@@ -165,4 +188,4 @@ for device in device_list:
 
 
 # close log
-file.close() 
+file.close()
