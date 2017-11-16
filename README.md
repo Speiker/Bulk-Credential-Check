@@ -13,3 +13,7 @@ Assumptions: Telnet connections are scripted to be recognized as follows:
      Hostname# or Hostname>
 
 This script keys off "Username: ", "Password: ", and "#" or ">" to validate successful telnet connections.
+
+
+v1.0 - Pings imported devices to determine availability then attempts to connect.
+v1.1 - Scans ports 22 and 23 of imported devices to determine availability then attempts to connect.
