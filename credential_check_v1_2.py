@@ -44,14 +44,14 @@ print(user_message)
 
 def main():
     initialize_script()
-    # Run initial test
+    # Run initial connection test
     connection_test()
-    # Run additional tests if requested
+    # Offer to run additional connection tests
     additional_test()
 
 
 def initialize_script():
-        # Prompt for user credentials
+    # Prompt for user credentials
     global username, password, enablepw
     username, password, enablepw = user_credentials()
 
@@ -67,10 +67,9 @@ def initialize_script():
         else:
             device_file = device_file.strip() + '.txt'
 
-    # Initialiaze variables
+    # Initialize variables needed for devices
     global device_list
     global device
-
     # Create device list to populate from devices.txt
     device_list = []
     
