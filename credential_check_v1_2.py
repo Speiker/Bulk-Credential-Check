@@ -93,7 +93,8 @@ def initialize_script():
                 continue
 
             else:
-                print(Fore.MAGENTA + "    Checking " + str(line) + Fore.WHITE)
+                if avail_check == 'y':
+                    print(Fore.MAGENTA + "    Checking " + str(line) + Fore.WHITE)
                 # Check if CIDR network was entered
                 if "/" in line:
                     # Convert CIDR to individual hosts
