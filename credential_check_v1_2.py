@@ -54,18 +54,23 @@ def initialize_script():
     # Prompt for user credentials
     global username, password, enablepw
     username, password, enablepw = user_credentials()
+    device_export = 'n'
 
-    # Offer to save available devices found to file
-    user_message = Fore.CYAN + "\nWould you like to export available devices found to file? (y/n) " + Fore.WHITE
-    device_export = input(user_message)
-    if device_export.lower() == 'y':
-        user_message = Fore.CYAN + "    Please enter name for the file: " + Fore.WHITE
-        device_file = input(user_message)
+    # Offer to check availability of devices before scanning
+    user_message = Fore.CYAN + "\nWould you like to check availability before scanning? (y/n) " + Fore.WHITE
+    avail_check = input(user_message)
+    if avail_check.lower() == 'y':
+        # Offer to save available devices found to file
+        user_message = Fore.CYAN + "\nWould you like to export available devices found to file? (y/n) " + Fore.WHITE
+        device_export = input(user_message)
+        if device_export.lower() == 'y':
+            user_message = Fore.CYAN + "    Please enter name for the file: " + Fore.WHITE
+            device_file = input(user_message)
 
-        if device_file.endswith('.txt'):
-            device_file = device_file.strip()
-        else:
-            device_file = device_file.strip() + '.txt'
+            if device_file.endswith('.txt'):
+                device_file = device_file.strip()
+            else:
+                device_file = device_file.strip() + '.txt'
 
     # Initialize variables needed for devices
     global device_list
@@ -74,7 +79,10 @@ def initialize_script():
     device_list = []
     
     # open the devices text file in read-only mode
-    print(Fore.MAGENTA + "\n\nImporting devices and checking availability..." + Fore.WHITE)
+    if avail_check == 'y':
+        print(Fore.MAGENTA + "\n\nImporting devices and checking availability..." + Fore.WHITE)
+    else:
+        print(Fore.MAGENTA + "\n\nImporting devices..." + Fore.WHITE)
     with open('devices.txt', 'r') as fn:
 
         # iterate through the lines in the text file
@@ -92,13 +100,19 @@ def initialize_script():
                     for ip in IPNetwork(line):
                         # Converted host from CIDR is device
                         device = ip
-                        # Function to check reachability
-                        online_device_add()
+                        if avail_check == 'y':
+                            # Function to check availability if requested
+                            online_device_add()
+                        else:
+                            device_list.append(str(device))
                 else:
                     # entire line is device
                     device = line
-                    # Function to check reachability
-                    online_device_add()
+                    if avail_check == 'y':
+                        # Function to check availability if requested
+                        online_device_add()
+                    else:
+                        device_list.append(str(device))
 
 
     # Write available devices to file if requested earlier
@@ -134,7 +148,7 @@ def online_device_add():
 
 
 def connection_test():
-    print(Fore.MAGENTA + "\n\nTesting access to online devices for " + str(username) + "." + Fore.WHITE)
+    print(Fore.MAGENTA + "\n\nTesting access to devices for " + str(username) + "." + Fore.WHITE)
     
     # Set log file name to match username tested and initialize log
     logname = username + "_" + strftime("%Y-%m-%d_%H%M") +".csv"
