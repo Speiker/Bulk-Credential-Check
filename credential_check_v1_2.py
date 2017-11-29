@@ -188,10 +188,10 @@ def connection_test():
                 # Use telnetlib to attempt to connect
                 tn = telnetlib.Telnet(device)
                 # Listen for username prompt and send username
-                tn.read_until(b"Username: ")
+                tn.read_until(b"Username: ",2)
                 tn.write(username.encode('ascii') + b"\n")
                 # Listen for password prompt and send password
-                tn.read_until(b"Password: ")
+                tn.read_until(b"Password: ",2)
                 tn.write(password.encode('ascii') + b"\n")
                 # Check output to verify successful connection
                 conn_output = tn.read_until(b"#",2)
