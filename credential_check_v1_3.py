@@ -181,7 +181,7 @@ def test(device):
             try:
                 # Here we are saying "if ssh failed, TRY telnet"
                 # Use telnetlib to attempt to connect
-                tn = telnetlib.Telnet(device)
+                tn = telnetlib.Telnet(device,23,2)
                 # Listen for username prompt and send username
                 tn.read_until(b"Username: ",2)
                 tn.write(username.encode('ascii') + b"\n")
