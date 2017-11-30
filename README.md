@@ -22,3 +22,5 @@ v1.1 - Scans ports 22 and 23 of imported devices to determine availability then 
 v1.2 - Changed back to ping for availablity check. Made device availability check optional as well as added an option to export the device list to a file after availability was checked and test additional credentials after initial scan. Converted much of the script into  various functions.
 
 v1.3 - Added threading to support multiple simultaneous connections. Set max concurrent connections to 50. SSH config file (sshd_config) will need to be modified in order to support that many outbound connections (MaxSessions and MaxStartups fields).
+
+v1.4 - Added threading to support multiple availability checks and resolved thread count issue with large scans. Also added scanning details to display number of devices scanned and the time taken once the scan completes. Minor revisions to layout elsewhere.
