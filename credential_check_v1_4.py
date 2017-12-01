@@ -180,9 +180,6 @@ def online_device_add(device):
 def test(device,device_count):
     auth_type = ""
 
-    # Pull from pool of available threads
-    #sema.acquire()
-
     # Use a try, so it doesn't throw an exception and cancel out of the script.
     try:
         # We need to set the various options Netmiko is expecting. 
@@ -241,14 +238,15 @@ def test(device,device_count):
             # user and continue onto the next item in the for loop.
             user_message = Fore.MAGENTA + "   Unable to connect." + Fore.WHITE
 
+    # Lock output to this thread
+    screenlock.acquire()
+
     # Add connection result to log
     file = open(logname, 'a')
     file.write(device + "," + auth_type + "\n")
     file.close()
 
     # Prints connection result to screen
-    # Lock output to this thread
-    screenlock.acquire()
     # Create a heading so if there are multiple devices, you know what the output is for
     print ("\n----------------------------\n" + 
         str(device) + " - " + 
@@ -279,7 +277,7 @@ def connection_test():
     file = open(logname, 'w')
     # Add header information
     file.write("device,authentication type\n")
-    # close log after writing header; additional logs will be appended
+    # Close log after writing header; additional logs will be appended
     file.close()
 
     # This loop will test SSH then Telnet connections to every device in the list
