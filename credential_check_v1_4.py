@@ -30,12 +30,14 @@ from time import strftime
 from datetime import datetime
 # Used to verify device availability
 import os
-# Used to check OS type
+# Used to check OS type for availability check
 from sys import platform
 # Used to convert CIDR to hosts
 from netaddr import IPNetwork
 # Used to support multiple connections
 import threading
+# Used to suppress connection reset errors
+import sys
 
 # colorama initialization, required for windows
 init(autoreset=True)
@@ -50,6 +52,7 @@ print(user_message)
 maxthreads = 50
 sema = threading.BoundedSemaphore(value=maxthreads)
 screenlock = threading.Semaphore(value=1)
+
 
 def main():
     initialize_script()
@@ -120,8 +123,17 @@ def initialize_script():
 
     # Check availability of devices if requested
     if avail_check == 'y':
+        # Record start time of scan
+        start_time = datetime.now()
+
+        print(Fore.MAGENTA + "\n    Checking availability..." + Fore.WHITE, end = "\r")
+
+        # Hides cursor and starts waiting message generator
+        hide_cursor()
+        threading.Timer(10, wait_message).start()
+
+        # Starts threads to check availability
         threads = []
-        print(Fore.MAGENTA + "\n    Checking availability..." + Fore.WHITE)
         for device in temp_list:
             my_thread = threading.Thread(target=online_device_add, args=(device,))
             # Pull from pool of available threads
@@ -135,6 +147,12 @@ def initialize_script():
         for t in threads:
             if t != main_thread:
                 t.join()
+
+        # Record total devices and availability scan time for output later
+        global avail_scan_time
+        global total_devices
+        total_devices = len(temp_list)
+        avail_scan_time = datetime.now() - start_time
     else:
         device_list = temp_list
 
@@ -145,6 +163,10 @@ def initialize_script():
         for device in device_list:
             device_log.write(device + "\n")
         device_log.close()
+
+    # Stop message generator
+    global avail_complete
+    avail_complete = "y"
 
 
 def user_credentials():
@@ -159,9 +181,6 @@ def user_credentials():
 
 def online_device_add(device):
     # Function to check if device is online
-
-    # Pull from pool of available threads
-    #sema.acquire()
 
     # Checks host OS type and pings remote devices to determine availability
     if "linux" in platform:
@@ -192,7 +211,9 @@ def test(device,device_count):
             'secret': enablepw,
         }
         # This command is when we are attempting to connect. If it fails, it will move on to the except block below
-        net_connect = ConnectHandler(**network_device_param)
+        # Use RedirectStdStreams to filter any output errors from connection resets
+        with RedirectStdStreams(stderr=devnull):
+            net_connect = ConnectHandler(**network_device_param)
         # This variable will be used to report successful connections
         auth_type = "SSH"
         # Close session
@@ -298,6 +319,9 @@ def connection_test():
             t.join()
 
     # Prints scanning details
+    if avail_scan_time != '':
+        print(Fore.CYAN + "\nTotal devices: " + str(total_devices) + Fore.WHITE)
+        print(Fore.CYAN + "   Time to check availability: " + str(avail_scan_time) + Fore.WHITE)
     print(Fore.CYAN + "\nTotal devices scanned: " + str(len(device_list)) + Fore.WHITE)
     print(Fore.CYAN + "   Elapsed time: " + str(datetime.now() - start_time) + Fore.WHITE)
 
@@ -318,6 +342,90 @@ def additional_test():
         # Run additional tests
         connection_test()
         additional_test()
+
+
+# Used to redirect standard output and/or error messages
+devnull = open(os.devnull, 'w')
+class RedirectStdStreams(object):
+    def __init__(self, stdout=None, stderr=None):
+        self._stdout = stdout or sys.stdout
+        self._stderr = stderr or sys.stderr
+
+    def __enter__(self):
+        self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
+        self.old_stdout.flush(); self.old_stderr.flush()
+        sys.stdout, sys.stderr = self._stdout, self._stderr
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._stdout.flush(); self._stderr.flush()
+        sys.stdout = self.old_stdout
+        sys.stderr = self.old_stderr
+
+
+# Used for wait messages during availability check
+avail_complete = ''
+message_count = 0
+def wait_message():
+    global message_count
+    # This will check if the messages still need to be updated
+    # Completes after availibility checks have finished
+    if avail_complete == "y":
+        show_cursor()
+        return
+    # This resets the message count to start from the first message
+    if message_count > 12:
+        message_count = -1
+    message_count = message_count + 1
+    loading = ["    Checking availability...                 ",
+        "    Please wait...                           ",
+        "    Please wait some more...                 ",
+        "    You're still waiting, right?             ",
+        "    You still there?...                      ",
+        "    Hello?                                   ",
+        "    Oh, there you are.                       ",
+        "    Still Waiting...                         ",
+        "    Dum dada dee dum dada...                 ",
+        "    I'm bored, gonna look through some stuff.",
+        "    Hmmm, found Kernel32.dll                 ",
+        "    Scanning kernel32.dll...                 ",
+        "    kernel32.dll is useless. Deleting...     ",
+        "    Ta Da! Oh wait, still not done yet...    "
+    ]
+    print(Fore.MAGENTA + loading[message_count] + Fore.WHITE, end = "\r")
+    # Sets the function to call itself again in 10 seconds
+    threading.Timer(10, wait_message).start()
+
+
+# Functions to disable cursor in both linux and Windows
+if os.name == 'nt':
+    import msvcrt
+    import ctypes
+
+    class _CursorInfo(ctypes.Structure):
+        _fields_ = [("size", ctypes.c_int),
+                    ("visible", ctypes.c_byte)]
+
+def hide_cursor():
+    if os.name == 'nt':
+        ci = _CursorInfo()
+        handle = ctypes.windll.kernel32.GetStdHandle(-11)
+        ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
+        ci.visible = False
+        ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
+    elif os.name == 'posix':
+        sys.stdout.write("\033[?25l")
+        sys.stdout.flush()
+
+def show_cursor():
+    if os.name == 'nt':
+        ci = _CursorInfo()
+        handle = ctypes.windll.kernel32.GetStdHandle(-11)
+        ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
+        ci.visible = True
+        ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
+    elif os.name == 'posix':
+        sys.stdout.write("\033[?25h")
+        sys.stdout.flush()
 
 
 if __name__ == "__main__":
