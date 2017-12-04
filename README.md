@@ -23,4 +23,4 @@ v1.2 - Changed back to ping for availablity check. Made device availability chec
 
 v1.3 - Added threading to support multiple simultaneous connections. Set max concurrent connections to 50. SSH config file (sshd_config) will need to be modified in order to support that many outbound connections (MaxSessions and MaxStartups fields).
 
-v1.4 - Added threading to support multiple availability checks and resolved thread count issue with large scans. Also added scanning details to display number of devices scanned and the time taken once the scan completes. Minor revisions to layout elsewhere.
+v1.4 - Added threading to support multiple availability checks and resolved thread count issue with large scans. Also added scanning details to display number of devices scanned and the time taken once the scan completes. Added functions to display varying status messages during long availability checks and enable/disable the display of the cursor when that's being done. Additional minor revisions to code thoughtout.
