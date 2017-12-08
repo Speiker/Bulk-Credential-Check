@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #########################################################################
 # Use: Check credentials against multiple devices and log connections   #
 # Version: 1.4                                                          #
@@ -345,6 +346,7 @@ def additional_test():
 
 
 # Used to redirect standard output and/or error messages
+# This will redirect connection refused and reset error msgs to null
 devnull = open(os.devnull, 'w')
 class RedirectStdStreams(object):
     def __init__(self, stdout=None, stderr=None):
