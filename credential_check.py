@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #########################################################################
 # Use: Check credentials against multiple devices and log connections   #
-# Version: 1.4                                                          #
+# Version: 1.5                                                          #
 #                                                                       #
 # Input: devices.txt file with one device hostname or IP address per    #
 #        line. This can include CIDR networks                           #
@@ -45,7 +45,7 @@ init(autoreset=True)
 
 
 # Display script name and version
-user_message = Fore.YELLOW + "\n\nCredential Check - v1.4\n\n" + Fore.WHITE
+user_message = Fore.YELLOW + "\n\nCredential Check - v1.5\n\n" + Fore.WHITE
 print(user_message)
 
 
@@ -56,24 +56,48 @@ screenlock = threading.Semaphore(value=1)
 
 
 def main():
+    # Collect credential sets and list of devices to scan
     initialize_script()
-    # Run initial connection test
-    connection_test()
-    # Offer to run additional connection tests
-    additional_test()
+
+    # Run connection tests using provided credentials
+    global additional_check
+    global usernames
+    # Record start time of scans
+    global start_time
+    start_time = datetime.now()
+    for cred_set in usernames:
+        global username, password, enablepw
+        username = cred_set[0]
+        password = cred_set[1]
+        enablepw = cred_set[2]
+        connection_test()
+
+    # Provide summary reports before exit
+    summary()
+
+
 
 
 def initialize_script():
     # Prompt for user credentials
-    global username, password, enablepw
+    #global username, password, enablepw
+    global usernames
     username, password, enablepw = user_credentials()
+    usernames = [[username, password, enablepw]]
+
+
+    # Offer to check additional credentials
+    user_message = Fore.CYAN + "\nWould you like to check additional credentials? (y/n) " + Fore.WHITE
+    global additional_check
+    additional_check = input(user_message)
+    if additional_check.lower() == 'y':
+        usernames = additional_creds()
 
     # Offer to check availability of devices before scanning
     user_message = Fore.CYAN + "\nWould you like to check availability before scanning? (y/n) " + Fore.WHITE
     avail_check = input(user_message)
     if avail_check.lower() == 'y':
         # Offer to save available devices found to file
-        device_export = 'n'
         user_message = Fore.CYAN + "\nWould you like to export available devices found to file? (y/n) " + Fore.WHITE
         device_export = input(user_message)
         if device_export.lower() == 'y':
@@ -178,6 +202,19 @@ def user_credentials():
     enablepw = password
 
     return username, password, enablepw
+
+
+def additional_creds():
+    # Add additional credential sets to global usernames list
+    global usernames
+    username, password, enablepw = user_credentials()
+    usernames.append([username, password, enablepw])
+    user_message = Fore.CYAN + "\nWould you like to check additional credentials? (y/n) " + Fore.WHITE
+    additional_check = input(user_message)
+    if additional_check.lower() == 'y':
+        additional_creds()
+
+    return usernames
 
 
 def online_device_add(device):
@@ -288,14 +325,12 @@ def test(device,device_count):
 
 
 def connection_test():
-    print(Fore.MAGENTA + "\n\nTesting access to devices for " + str(username) + "." + Fore.WHITE)
+    print(Fore.MAGENTA + "\n\nTesting access to devices using " + str(username) + "." + Fore.WHITE)
 
-    # Record start time of scan
-    start_time = datetime.now()
     # Set log file name to match username tested and initialize log
     global file
     global logname
-    logname = username + "_" + strftime("%Y-%m-%d_%H%M") +".csv"
+    logname = username + "_" + password[:3] + "_" + strftime("%Y-%m-%d_%H%M") +".csv"
     file = open(logname, 'w')
     # Add header information
     file.write("device,authentication type\n")
@@ -319,30 +354,21 @@ def connection_test():
         if t != main_thread:
             t.join()
 
-    # Prints scanning details
-    if avail_scan_time != '':
-        print(Fore.CYAN + "\nTotal devices: " + str(total_devices) + Fore.WHITE)
-        print(Fore.CYAN + "   Time to check availability: " + str(avail_scan_time) + Fore.WHITE)
-    print(Fore.CYAN + "\nTotal devices scanned: " + str(len(device_list)) + Fore.WHITE)
-    print(Fore.CYAN + "   Elapsed time: " + str(datetime.now() - start_time) + Fore.WHITE)
-
     # close log
     file.close()
 
 
-def additional_test():
-    # Offer to test another set of credentials
-    user_message = Fore.CYAN + "\nWould you like to check additional credentials? (y/n) " + Fore.WHITE
-    additional_prompt = input(user_message)
+def summary():
+    # Print details on availability check if performed
+    if avail_scan_time != '':
+        print(Fore.CYAN + "\nTotal devices: " + str(total_devices) +
+            "\n   Time to check availability: " + str(avail_scan_time) + Fore.WHITE
+        )
 
-    if additional_prompt.lower() == 'y':
-        # Prompt for user credentials
-        global username, password, enablepw
-        username, password, enablepw = user_credentials()
-
-        # Run additional tests
-        connection_test()
-        additional_test()
+    # Total number of devices scanned and elapsed time
+    print(Fore.CYAN + "\nTotal devices scanned: " + str(len(device_list)) +
+        "\n   Elapsed time: " + str(datetime.now() - start_time) + Fore.WHITE
+    )
 
 
 # Used to redirect standard output and/or error messages
