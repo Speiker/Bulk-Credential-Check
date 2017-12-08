@@ -367,6 +367,7 @@ def summary():
 
     # Total number of devices scanned and elapsed time
     print(Fore.CYAN + "\nTotal devices scanned: " + str(len(device_list)) +
+        "\n   Credentials checked: " + str(len(usernames)) + Fore.WHITE +
         "\n   Elapsed time: " + str(datetime.now() - start_time) + Fore.WHITE
     )
 
