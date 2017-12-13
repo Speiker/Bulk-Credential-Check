@@ -59,12 +59,11 @@ def main():
     # Collect credential sets and list of devices to scan
     initialize_script()
 
-    # Run connection tests using provided credentials
-    global additional_check
-    global usernames
     # Record start time of scans
     global start_time
     start_time = datetime.now()
+    # Run connection tests using provided credentials
+    global usernames
     for cred_set in usernames:
         global username, password, enablepw
         username = cred_set[0]
@@ -80,15 +79,12 @@ def main():
 
 def initialize_script():
     # Prompt for user credentials
-    #global username, password, enablepw
     global usernames
     username, password, enablepw = user_credentials()
     usernames = [[username, password, enablepw]]
 
-
     # Offer to check additional credentials
     user_message = Fore.CYAN + "\nWould you like to check additional credentials? (y/n) " + Fore.WHITE
-    global additional_check
     additional_check = input(user_message)
     if additional_check.lower() == 'y':
         usernames = additional_creds()
@@ -96,6 +92,7 @@ def initialize_script():
     # Offer to check availability of devices before scanning
     user_message = Fore.CYAN + "\nWould you like to check availability before scanning? (y/n) " + Fore.WHITE
     avail_check = input(user_message)
+    device_export = ''
     if avail_check.lower() == 'y':
         # Offer to save available devices found to file
         user_message = Fore.CYAN + "\nWould you like to export available devices found to file? (y/n) " + Fore.WHITE
@@ -145,7 +142,6 @@ def initialize_script():
                     device = line
                     temp_list.append(str(device))
 
-
     # Check availability of devices if requested
     if avail_check == 'y':
         # Record start time of scan
@@ -180,7 +176,6 @@ def initialize_script():
         avail_scan_time = datetime.now() - start_time
     else:
         device_list = temp_list
-
 
     # Write available devices to file if requested earlier
     if device_export.lower() == 'y':
@@ -366,9 +361,11 @@ def summary():
         )
 
     # Total number of devices scanned and elapsed time
-    print(Fore.CYAN + "\nTotal devices scanned: " + str(len(device_list)) +
-        "\n   Credentials checked: " + str(len(usernames)) + Fore.WHITE +
-        "\n   Elapsed time: " + str(datetime.now() - start_time) + Fore.WHITE
+    print(Fore.CYAN + 
+        "\nTotal devices scanned: " + str(len(device_list)) +
+        "\n   Credentials checked: " + str(len(usernames)) +
+        "\n   Elapsed time: " + str(datetime.now() - start_time) + 
+        Fore.WHITE
     )
 
 
